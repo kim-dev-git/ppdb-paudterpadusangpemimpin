@@ -33,6 +33,22 @@ Vue.use(VueRouter)
     component: lazyLoad('ResetPassword'),
   },
   {
+    path: '/profil',
+    name: 'Profile',
+    component: lazyLoad('Profile'),
+  },
+  {
+    path: '/calonsiswa',
+    name: 'Applicants',
+    component: lazyLoad('Applicants'),
+  },
+  {
+    path: '/calonsiswa/:id',
+    name: 'Applicant',
+    props: true,
+    component: lazyLoad('Applicant'),
+  },
+  {
     path: '/about',
     name: 'About',
     // route level code-splitting

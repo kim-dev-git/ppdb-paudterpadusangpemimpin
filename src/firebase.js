@@ -4,22 +4,26 @@ import 'firebase/firestore'
 
 // firebase init - add your own config here
 const firebaseConfig = {
-  apiKey: "AIzaSyCUFVADXF_XNF0wMDt_En0X6M3PmGfp7NI",
-  authDomain: "apel-bulog.firebaseapp.com",
-  databaseURL: "https://apel-bulog.firebaseio.com",
-  projectId: "apel-bulog",
-  storageBucket: "apel-bulog.appspot.com",
-  messagingSenderId: "140112429988",
-  appId: "1:140112429988:web:fd71eba5c64fd7a571b731"
+  apiKey: "AIzaSyCSfd3znlSq5BrEfwoWJTzmWeiqK7DltvY",
+  authDomain: "ppdb-paudterpadusangpemimpin.firebaseapp.com",
+  databaseURL: "https://ppdb-paudterpadusangpemimpin.firebaseio.com",
+  projectId: "ppdb-paudterpadusangpemimpin",
+  storageBucket: "ppdb-paudterpadusangpemimpin.appspot.com",
+  messagingSenderId: "1098848928143",
+  appId: "1:1098848928143:web:7ec9e5b72e1d92d30bcbfa"
 }
 firebase.initializeApp(firebaseConfig)
 
 // utils
 const db = firebase.firestore()
 const auth = firebase.auth()
+const RecaptchaVerifier = firebase.auth.RecaptchaVerifier
+const { Timestamp } = firebase.firestore
 
 // export utils/refs
 export {
   db,
   auth,
+  RecaptchaVerifier,
+  Timestamp
 }
