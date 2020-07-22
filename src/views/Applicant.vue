@@ -11,13 +11,37 @@
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <v-card-title class="font-weight-regular">{{ 'Data ' + applicant.name }}</v-card-title>
+        <v-spacer />
+        <v-btn icon class="mr-n4" @click="editApplicant()">
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
       </v-layout>
     </v-app-bar>
+    
     <v-main>
-      <v-layout
+      <v-layout id="skeleton" v-if="loading"
         column >
         <v-list two-line>
-          <v-list-item v-for="data in formList" :key="data.value">
+          <v-list-item v-for="data in formList" :key="data.value" v-if="data.type !== 'file'">
+            <v-list-item-content>
+              <v-list-item-title v-if="data.type !== 'date' && data.type !== 'file'">
+                <v-sheet height="18" width="128" color="black" style="opacity: .2"></v-sheet>
+              </v-list-item-title>
+              <v-list-item-title v-else-if="data.type === 'date' && applicant[data.value] && applicant[data.value].seconds">
+                <v-sheet height="18" width="164" color="black" style="opacity: .2"></v-sheet>
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                <v-sheet height="18" width="96" color="black" style="opacity: .1"></v-sheet>
+              </v-list-item-subtitle>
+              <v-divider class="mt-2 mb-n2" />
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-layout>
+      <v-layout id="content" v-else
+        column>
+        <v-list two-line>
+          <v-list-item v-for="data in formList" :key="data.value" v-if="data.type !== 'file'">
             <v-list-item-content>
               <v-list-item-title v-if="data.type !== 'date'">{{ applicant[data.value] }}</v-list-item-title>
               <v-list-item-title v-else-if="data.type === 'date' && applicant[data.value] && applicant[data.value].seconds">{{ toDate(applicant[data.value].seconds) }}</v-list-item-title>
@@ -25,20 +49,89 @@
               <v-divider class="mt-2 mb-n2" />
             </v-list-item-content>
           </v-list-item>
-        </v-list>  
+        </v-list>
       </v-layout>
+      <p class="ml-4 mb-0 subtitle-2">Berkas</p>
+      <div v-if="applicant.image">
+        <v-layout class="py-2 px-3">
+          <div v-for="image in applicant.image" :key="image" class="d-flex">
+            <img :src="image" width="80" class="ma-1" @click="openImage(image)" />
+          </div>
+        </v-layout>
+        <p class="mb-4 px-4 text--disabled body-2">Klik gambar untuk memperbesar</p>
+      </div>
+      <v-layout v-else class="px-4 mb-4 body-2 text--disabled">Berkas tidak ada</v-layout>
     </v-main>
+
+    <v-dialog
+      fullscreen
+      hide-overlay
+      transition="dialog-bottom-transition"
+      v-model="dialog" >
+      <v-card>
+        <v-toolbar
+          dark dense flat tile color="primary">
+          <v-layout
+            class="align-center">
+            <v-btn
+              @click="dialog = false"
+              icon class="ml-n2">
+              <v-icon>mdi-arrow-left</v-icon>
+            </v-btn>
+            <v-card-title class="font-weight-regular">Edit Calon Siswa</v-card-title>
+            <v-spacer />
+            <v-btn  
+              @click="updateApplicant()"
+              icon class="text-none mr-n2">
+              <v-icon>mdi-check</v-icon>
+            </v-btn>
+          </v-layout>
+        </v-toolbar>
+        <v-layout
+          column
+          class="px-4 mt-2" >
+          <div v-for="form in formList" :key="form.value">
+          <v-textarea
+            v-if="form.type === 'textarea'"
+            :label="form.label"
+            v-model.trim="formEdit[form.value]"
+            auto-grow />
+          <v-combobox
+            v-else-if="form.type === 'combobox'"
+            :items="form.items"
+            :label="form.label"
+            v-model.trim="formEdit[form.value]" />
+          <v-file-input
+            v-else-if="form.type === 'file'"
+            accept="image/*"
+            @change="uploadImage"
+            :label="form.label"
+            v-model="formEdit[form.value]" />
+          <v-text-field
+            v-else
+            :type="form.type"
+            :label="form.label"
+            v-model.trim="formEdit[form.value]" />
+          </div>
+        </v-layout>
+      </v-card>
+    </v-dialog>
+
   </div>
 </template>
 
 <script>
 import moment from 'moment'
+import { storage } from '@/firebase.js'
 import { mapState } from 'vuex'
 export default {
   props: [ 'id' ],
   components: {
   },
   data: () => ({
+    dialog: false,
+    formEdit: {},
+    currentImage: [],
     formList: [
       { label: 'Nama Calon Siswa', value: 'name', type: 'text' },
       { label: 'Tempat Lahir', value: 'birthplace', type: 'text' },
@@ -51,22 +144,99 @@ export default {
       { label: 'NIK Anak', value: 'nik', type: 'number' },
       { label: 'Berat (kg)', value: 'wight', type: 'number' },
       { label: 'Tinggi (cm)', value: 'height', type: 'number' },
-      // { label: 'Kartu Keluarga', value: 'kk', type: 'file' },
-      // { label: 'Akta Kelahiran', value: 'akta', type: 'file' },
-      // { label: 'Pas Foto', value: 'foto', type: 'file' },
+      { label: 'Kartu Keluarga', value: 'kk', type: 'file' },
+      { label: 'Akta Kelahiran', value: 'akta', type: 'file' },
+      { label: 'Pas Foto', value: 'foto', type: 'file' },
     ]
   }),
   computed: {
-    ...mapState(['applicant']),
+    ...mapState(['applicant', 'loading']),
   },
   methods: {
+    getApplicant() {
+      this.$store.dispatch('getApplicant', { id: this.id })
+    },
     toDate(value) {
       moment.lang("id")
       return moment.unix(value).format("DD MMMM YYYY")
+    },
+    openImage(image) {
+      window.location.href = image
+    },
+    editApplicant() {
+      this.formEdit = this.applicant
+      this.formEdit.image = []
+      this.formEdit.birthdate = new Date(this.applicant.birthdate.seconds * 1000).toISOString().substr(0, 10),
+      this.currentImage.push(this.applicant.kk)
+      this.currentImage.push(this.applicant.akta)
+      this.currentImage.push(this.applicant.foto)
+      this.formEdit.kk = null
+      this.formEdit.akta = null
+      this.formEdit.foto = null
+      this.dialog = true
+    },
+    async updateApplicant() {
+      await this.formList.forEach(i => {
+        if (i.type === 'file' && this.formEdit[i.value]) {
+          this.formEdit[i.value] = this.formEdit[i.value].name
+        }
+      })
+      
+      let uid = this.applicant.registrarUID
+
+      
+      await this.$store.dispatch('putApplicant', { id: this.id, data: this.formEdit })
+
+      await this.currentImage.forEach(image => {
+        console.log(image)
+        let imageRef = storage.ref('applicants/' + uid + '/' + image)
+        imageRef.delete()
+      })
+
+      // const kkRef = storage.ref('applicants/' + uid + '/' + this.applicant.kk)
+      // const aktaRef = storage.ref('applicants/' + uid + '/' + this.applicant.akta)
+      // const fotoRef = storage.ref('applicants/' + uid + '/' + this.applicant.foto)
+
+      // await kkRef.delete()
+      // await aktaRef.delete()
+      // await fotoRef.delete()
+
+
+      await this.getApplicant()
+      this.formEdit = {}
+      this.formEdit.image = []
+      this.dialog = false
+    },
+    uploadImage(file) {
+      let uid = this.applicant.registrarUID
+      const storageRef = storage.ref('applicants/' + uid + '/' + file.name)
+      let uploadTask  = storageRef.put(file)
+      uploadTask.on('state_changed', (snapshot) => {
+        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        // console.log('Upload is ' + progress + '% done');
+      }, (error) => {
+        switch (error.code) {
+          case 'storage/unauthorized':
+            // User doesn't have permission to access the object
+            break;
+
+          case 'storage/canceled':
+            // User canceled the upload
+            break;
+
+          case 'storage/unknown':
+            // Unknown error occurred, inspect error.serverResponse
+            break;
+        }
+      }, () => {
+        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+          this.formEdit.image.push(downloadURL)
+        })
+      })
     }
   },
   created() {
-    this.$store.dispatch('getApplicant', { id: this.id })
+    this.getApplicant()
   }
 
 }

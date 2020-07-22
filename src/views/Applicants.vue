@@ -6,7 +6,10 @@
         <v-sheet color="grey lighten-3">
           <p class="mb-0 px-3 py-1 subtitle-2 text--secondary">Calon siswa yang anda daftarkan</p>
         </v-sheet>
-        <v-list two-line>
+        <v-layout column v-if="loading">
+          Sedang memuat...
+        </v-layout>
+        <v-list two-line v-else>
           <v-list-item
             v-for="applicant in applicants" :key="applicant.id"
             class="mt-n2"
@@ -77,6 +80,7 @@
           <v-file-input
             v-else-if="form.type === 'file'"
             accept="image/*"
+            @change="uploadImage"
             :label="form.label"
             v-model="formAdd[form.value]" />
           <v-text-field
@@ -86,6 +90,12 @@
             v-model.trim="formAdd[form.value]" />
           </div>
         </v-layout>
+
+        <!-- <v-layout class="px-8">
+          <div class="d-flex" v-for="image in formAdd.image" :key="image">
+            <img :src="image" class="pa-1" width="128px" />
+          </div>
+        </v-layout> -->
       </v-card>
     </v-dialog>
   </div>
@@ -95,6 +105,7 @@
 
 import { mapState } from 'vuex'
 import TopNavigation from '@/components/Navigation/TopNavigation'
+import { storage } from '@/firebase.js'
 export default {
   components: {
     TopNavigation
@@ -114,23 +125,61 @@ export default {
       { label: 'NIK Anak', value: 'nik', type: 'number' },
       { label: 'Berat (kg)', value: 'wight', type: 'number' },
       { label: 'Tinggi (cm)', value: 'height', type: 'number' },
-      // { label: 'Kartu Keluarga', value: 'kk', type: 'file' },
-      // { label: 'Akta Kelahiran', value: 'akta', type: 'file' },
-      // { label: 'Pas Foto', value: 'foto', type: 'file' },
+      { label: 'Kartu Keluarga', value: 'kk', type: 'file' },
+      { label: 'Akta Kelahiran', value: 'akta', type: 'file' },
+      { label: 'Pas Foto', value: 'foto', type: 'file' },
     ]
   }),
   computed: {
-    ...mapState(['userProfile', 'applicants']),
+    ...mapState(['userProfile', 'applicants', 'loading']),
   },
   methods: {
     addApplicant() {
+      this.formList.forEach(i => {
+        if (i.type === 'file' && this.formAdd[i.value]) {
+          // console.log(i.value, ':', this.formAdd[i.value])
+          this.formAdd[i.value] = this.formAdd[i.value].name
+        }
+      })
       this.$store.dispatch('postApplicants', { user: this.userProfile, data: this.formAdd })
+      this.getApplicants()
+      this.formAdd = {}
+      this.formAdd.image = []
       this.dialog = false
     },
     getApplicants() {
       if (this.userProfile && this.userProfile.name) {
         this.$store.dispatch('getApplicants', { user: this.userProfile })
       }
+    },
+    uploadImage(file) {
+      let uid = this.userProfile.uid
+      const storageRef = storage.ref('applicants/' + uid + '/' + file.name)
+      let uploadTask  = storageRef.put(file)
+      uploadTask.on('state_changed', (snapshot) => {
+        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        // console.log('Upload is ' + progress + '% done');
+      }, (error) => {
+        switch (error.code) {
+          case 'storage/unauthorized':
+            // User doesn't have permission to access the object
+            break;
+
+          case 'storage/canceled':
+            // User canceled the upload
+            break;
+
+          case 'storage/unknown':
+            // Unknown error occurred, inspect error.serverResponse
+            break;
+        }
+      }, () => {
+        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+          this.formAdd.image.push(downloadURL)
+          // console.log('URL:', downloadURL)
+          // console.log('Form Add:', this.formAdd)
+        })
+      })
     }
   },
   watch: {
@@ -140,6 +189,7 @@ export default {
   },
   mounted() {
     this.getApplicants()
+    this.formAdd.image = []
   },
 }
 </script>
