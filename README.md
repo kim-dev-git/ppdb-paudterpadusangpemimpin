@@ -1,5 +1,4 @@
-# bulog
-
+# PPDB - PAUD Terpadu Sang Pemimpin
 ## Project setup
 ```
 npm install

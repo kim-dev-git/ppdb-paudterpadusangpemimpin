@@ -5,13 +5,14 @@ import 'firebase/storage'
 
 // firebase init - add your own config here
 const firebaseConfig = {
-  apiKey: "AIzaSyCSfd3znlSq5BrEfwoWJTzmWeiqK7DltvY",
-  authDomain: "ppdb-paudterpadusangpemimpin.firebaseapp.com",
-  databaseURL: "https://ppdb-paudterpadusangpemimpin.firebaseio.com",
-  projectId: "ppdb-paudterpadusangpemimpin",
-  storageBucket: "ppdb-paudterpadusangpemimpin.appspot.com",
-  messagingSenderId: "1098848928143",
-  appId: "1:1098848928143:web:7ec9e5b72e1d92d30bcbfa"
+  apiKey: "AIzaSyBbCf1Hs7ilZ3FVgjaOyImU8rZEqjqUuxM",
+  authDomain: "ppdb-ptsp.firebaseapp.com",
+  databaseURL: "https://ppdb-ptsp.firebaseio.com",
+  projectId: "ppdb-ptsp",
+  storageBucket: "ppdb-ptsp.appspot.com",
+  messagingSenderId: "381942125398",
+  appId: "1:381942125398:web:1c464fb0ea108d68933cf7",
+  measurementId: "G-SCCPJBQV3N"
 }
 firebase.initializeApp(firebaseConfig)
 
