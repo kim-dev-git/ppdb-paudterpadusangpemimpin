@@ -124,7 +124,8 @@ export default {
         }
       }
       return otp
-    }
+    },
+    userProfile() { return this.$store.state.userProfile }
   },
   methods: {
     login() {
@@ -222,6 +223,11 @@ export default {
   created(){
     this.initReCaptcha()
   },
+  mounted() {
+    if (this.userProfile) {
+      this.$router.replace('/')
+    }
+  }
 }
 </script>
 

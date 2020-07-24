@@ -108,6 +108,9 @@ export default {
     loginForm: {},
     signupForm: {},
   }),
+  computed: {
+    userProfile() { return this.$store.state.userProfile }
+  },
   methods: {
     login() {
       this.$store.dispatch('login', {
@@ -123,6 +126,11 @@ export default {
       })
     }
   },
+  mounted() {
+    if (this.userProfile) {
+      this.$router.replace('/')
+    }
+  }
 }
 </script>
 

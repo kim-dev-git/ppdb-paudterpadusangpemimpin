@@ -70,7 +70,8 @@ export default {
         })
       }
       return positions
-    }
+    },
+    userProfile() { return this.$store.state.userProfile }
   },
   methods: {
     signup() {
@@ -81,6 +82,11 @@ export default {
         role: this.signupForm.role,
         position: this.signupForm.position
       })
+    }
+  },
+  mounted() {
+    if (this.userProfile) {
+      this.$router.replace('/')
     }
   }
 }
