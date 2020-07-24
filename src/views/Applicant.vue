@@ -12,8 +12,19 @@
         </v-btn>
         <v-card-title class="font-weight-regular">{{ 'Data ' + applicant.name }}</v-card-title>
         <v-spacer />
-        <v-btn icon class="mr-n4" @click="editApplicant()">
+        <v-btn
+          icon
+          class="mr-n4"
+          @click="editApplicant()"
+          v-if="userProfile.uid === applicant.registrarUID" >
           <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+        <v-btn
+          icon
+          class="mr-n4"
+          @click="dialogAdd = true"
+          v-if="userProfile.uid === applicant.registrarUID" >
+          <v-icon>mdi-plus</v-icon>
         </v-btn>
       </v-layout>
     </v-app-bar>
@@ -40,30 +51,215 @@
       </v-layout>
       <v-layout id="content" v-else
         column>
-        <v-list two-line>
-          <v-list-item v-for="data in formList" :key="data.value" v-if="data.type !== 'file'">
-            <v-list-item-content>
-              <v-list-item-title v-if="data.type !== 'date'">{{ applicant[data.value] }}</v-list-item-title>
-              <v-list-item-title v-else-if="data.type === 'date' && applicant[data.value] && applicant[data.value].seconds">{{ toDate(applicant[data.value].seconds) }}</v-list-item-title>
-              <v-list-item-subtitle>{{ data.label }}</v-list-item-subtitle>
-              <v-divider class="mt-2 mb-n2" />
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
+
+        <v-card
+          tile
+          class="px-4 py-2">
+          <v-layout class="align-center">
+            <p class="mb-0 subtitle-2 text--secondary">Status <v-chip class="ml-2">{{ applicant.status }}</v-chip></p>
+            <v-spacer />
+            <v-btn
+              icon
+              color="primary"
+              v-if="applicant.status === 'Verifikasi berkas'"
+              @click="dialogConfirm = true">
+              <v-icon>mdi-check</v-icon>
+            </v-btn>
+          </v-layout>
+        </v-card>
+
+        <v-chip-group
+          mandatory
+          active-class="primary--text"
+          class="mx-2"
+          v-model="activeTag"
+        >
+          <v-chip v-for="tag in tags" :key="tag" :value="tag"
+           outlined >
+            {{ tag }}
+          </v-chip>
+        </v-chip-group>
+
+        <v-divider />
+
+        <v-lazy id="data-calon-siswa"
+          v-if="activeTag === 'Calon Siswa'"
+          :options="{
+            threshold: .5
+          }"
+          min-height="200"
+          transition="fade-transition"
+        >
+          <v-list
+            two-line>
+            <v-list-item v-for="data in formList" :key="data.value" v-if="data.type !== 'file'">
+              <v-list-item-content>
+                <v-list-item-title v-if="data.type !== 'date'">{{ applicant[data.value] }}</v-list-item-title>
+                <v-list-item-title v-else-if="data.type === 'date' && applicant[data.value] && applicant[data.value].seconds">{{ toDate(applicant[data.value].seconds) }}</v-list-item-title>
+                <v-list-item-subtitle>{{ data.label }}</v-list-item-subtitle>
+                <v-divider class="mt-2 mb-n2" />
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-lazy>
+
+        <v-lazy id="data-orang-tua-wali"
+          v-else
+          :options="{
+            threshold: .5
+          }"
+          min-height="200"
+          transition="fade-transition"
+        >
+          <v-list
+            two-line>
+            <v-list-item v-for="data in formListGuardian" :key="data.value" v-if="applicant.data[activeTag]">
+              <v-list-item-content>
+                <v-list-item-title v-if="data.type !== 'date'"><span v-if="data.prefix">{{ data.prefix + ' ' }}</span>{{ applicant.data[activeTag][data.value] }}</v-list-item-title>
+                <v-list-item-title v-else-if="data.type === 'date' && applicant.data[activeTag][data.value] && applicant.data[activeTag][data.value].seconds">{{ toDate(applicant.data[activeTag][data.value].seconds) }}</v-list-item-title>
+                <v-list-item-subtitle>{{ data.label }}</v-list-item-subtitle>
+                <v-divider class="mt-2 mb-n2" />
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-sheet v-if="!applicant.data[activeTag]"
+              color="grey lighten-3"
+              class="mt-n2">
+              <p class="mb-0 px-3 py-1 subtitle-2 text--secondary">Data {{ activeTag }} belum ditambahkan</p>
+            </v-sheet>
+          </v-list>
+          
+
+        </v-lazy>
+
+
       </v-layout>
-      <p class="ml-4 mb-0 subtitle-2">Berkas</p>
-      <div v-if="applicant.image">
-        <v-layout class="py-2 px-3">
-          <div v-for="image in applicant.image" :key="image" class="d-flex">
-            <img :src="image" width="80" class="ma-1" @click="openImage(image)" />
-          </div>
-        </v-layout>
-        <p class="mb-4 px-4 text--disabled body-2">Klik gambar untuk memperbesar</p>
+
+      <div v-if="activeTag === 'Calon Siswa'">
+        <p class="ml-4 mb-0 subtitle-2">Berkas</p>
+        <div v-if="applicant.image">
+          <v-layout class="py-2 px-3">
+            <div v-for="image in applicant.image" :key="image" class="d-flex">
+              <img :src="image" width="80" class="ma-1" @click="openImage(image)" />
+            </div>
+          </v-layout>
+          <p class="mb-4 px-4 text--disabled body-2">Klik gambar untuk memperbesar</p>
+        </div>
+        <v-layout v-else class="px-4 mb-4 body-2 text--disabled">Berkas tidak ada</v-layout>
       </div>
-      <v-layout v-else class="px-4 mb-4 body-2 text--disabled">Berkas tidak ada</v-layout>
+
+      <v-dialog id="dialogAddRelation"
+        fullscreen
+        hide-overlay
+        transition="dialog-bottom-transition"
+        v-model="dialogAdd" >
+        <v-card>
+          <v-toolbar
+            dark dense flat tile color="primary">
+            <v-layout
+              class="align-center">
+              <v-btn
+                @click="dialogAdd = false"
+                icon class="ml-n2">
+                <v-icon>mdi-arrow-left</v-icon>
+              </v-btn>
+              <v-card-title class="font-weight-regular">Tambah Data Orang tua/wali</v-card-title>
+              <v-spacer />
+              <v-btn  
+                @click="addApplicantRelation()"
+                icon class="text-none mr-n2">
+                <v-icon>mdi-check</v-icon>
+              </v-btn>
+            </v-layout>
+          </v-toolbar>
+          <v-layout
+            column
+            class="px-4 mt-2" >
+            <div v-for="form in formListGuardian" :key="form.value">
+            <v-textarea
+              v-if="form.type === 'textarea'"
+              :label="form.label"
+              v-model.trim="formAdd[form.value]"
+              auto-grow />
+            <v-combobox
+              v-else-if="form.type === 'combobox'"
+              :items="form.items"
+              :label="form.label"
+              v-model.trim="formAdd[form.value]" />
+            <v-text-field
+              v-else
+              :prefix="form.prefix"
+              :type="form.type"
+              :label="form.label"
+              v-model.trim="formAdd[form.value]" />
+            </div>
+          </v-layout>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog id="dialogEditRelation"
+        fullscreen
+        hide-overlay
+        transition="dialog-bottom-transition"
+        v-model="dialogEditRelation" >
+        <v-card>
+          <v-toolbar
+            dark dense flat tile color="primary">
+            <v-layout
+              class="align-center">
+              <v-btn
+                @click="dialogEditRelation = false"
+                icon class="ml-n2">
+                <v-icon>mdi-arrow-left</v-icon>
+              </v-btn>
+              <v-card-title class="font-weight-regular">Edit Data Orang tua/wali</v-card-title>
+              <v-spacer />
+              <v-btn  
+                @click="updateApplicantRelation()"
+                icon class="text-none mr-n2">
+                <v-icon>mdi-check</v-icon>
+              </v-btn>
+            </v-layout>
+          </v-toolbar>
+          <v-layout
+            column
+            class="px-4 mt-2" >
+            <div v-for="form in formListGuardian" :key="form.value">
+            <v-textarea
+              v-if="form.type === 'textarea'"
+              :label="form.label"
+              v-model.trim="formEdit[form.value]"
+              auto-grow />
+            <v-combobox
+              v-else-if="form.type === 'combobox'"
+              :items="form.items"
+              :label="form.label"
+              v-model.trim="formEdit[form.value]" />
+            <v-text-field
+              v-else
+              :prefix="form.prefix"
+              :type="form.type"
+              :label="form.label"
+              v-model.trim="formEdit[form.value]" />
+            </div>
+          </v-layout>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog id="dialogConfirm"
+        v-model="dialogConfirm">
+        <v-card class="pa-4">
+          <v-card-text class="ml-n4 mt-2">Berkas sudah diverifikasi?</v-card-text>
+          <v-layout>
+            <v-spacer />
+            <v-btn text class="text--disabled" @click="dialogConfirm = false" >Belum</v-btn>
+            <v-btn text color="primary" @click="verifApplicant()">Sudah</v-btn>
+          </v-layout>
+        </v-card>
+      </v-dialog>
     </v-main>
 
-    <v-dialog
+    <v-dialog id="dialogEdit"
       fullscreen
       hide-overlay
       transition="dialog-bottom-transition"
@@ -74,7 +270,7 @@
           <v-layout
             class="align-center">
             <v-btn
-              @click="dialog = false"
+              @click="dialog = false, getApplicant()"
               icon class="ml-n2">
               <v-icon>mdi-arrow-left</v-icon>
             </v-btn>
@@ -129,9 +325,20 @@ export default {
   components: {
   },
   data: () => ({
+    tags: [
+      'Calon Siswa',
+      'Ayah',
+      'Ibu',
+      'Wali',
+    ],
+    activeTag: 'Calon Siswa',
     dialog: false,
     formEdit: {},
     currentImage: [],
+    dialogAdd: null,
+    dialogEditRelation: null,
+    dialogConfirm: null,
+    formAdd: {},
     formList: [
       { label: 'Nama Calon Siswa', value: 'name', type: 'text' },
       { label: 'Tempat Lahir', value: 'birthplace', type: 'text' },
@@ -147,10 +354,22 @@ export default {
       { label: 'Kartu Keluarga', value: 'kk', type: 'file' },
       { label: 'Akta Kelahiran', value: 'akta', type: 'file' },
       { label: 'Pas Foto', value: 'foto', type: 'file' },
-    ]
+    ],
+    formListGuardian: [
+      { label: 'Hubungan dengan calon siswa', value: 'relation', type: 'combobox', items: ['Ayah', 'Ibu', 'Wali'] },
+      { label: 'Nama', value: 'name', type: 'text' },
+      { label: 'Tempat Lahir', value: 'birthplace', type: 'text' },
+      { label: 'Tanggal Lahir', value: 'birthdate', type: 'date' },
+      { label: 'Alamat', value: 'address', type: 'textarea' },
+      { label: 'Pendidikan Terakhir', value: 'lastEducation', type: 'combobox', items: ['SD', 'SMP', 'SMA', 'D3', 'D4', 'S1', 'S2', 'S3'] },
+      { label: 'Warga Negara', value: 'citizen', type: 'text' },
+      { label: 'Agama', value: 'religion', type: 'combobox', items: ['Islam', 'Protestan', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu'] },
+      { label: 'Pekerjaan', value: 'job', type: 'text' },
+      { label: 'Penghasilan perbulan', value: 'salary', type: 'number', prefix: 'Rp.' },
+    ],
   }),
   computed: {
-    ...mapState(['applicant', 'loading']),
+    ...mapState(['applicant', 'loading', 'userProfile']),
   },
   methods: {
     getApplicant() {
@@ -164,16 +383,34 @@ export default {
       window.location.href = image
     },
     editApplicant() {
-      this.formEdit = this.applicant
-      this.formEdit.image = []
-      this.formEdit.birthdate = new Date(this.applicant.birthdate.seconds * 1000).toISOString().substr(0, 10),
-      this.currentImage.push(this.applicant.kk)
-      this.currentImage.push(this.applicant.akta)
-      this.currentImage.push(this.applicant.foto)
-      this.formEdit.kk = null
-      this.formEdit.akta = null
-      this.formEdit.foto = null
-      this.dialog = true
+      if(this.activeTag === 'Calon Siswa') {
+        this.formEdit = this.applicant
+        this.formEdit.image = []
+        this.formEdit.birthdate = new Date(this.applicant.birthdate.seconds * 1000).toISOString().substr(0, 10),
+        this.currentImage.push(this.applicant.kk)
+        this.currentImage.push(this.applicant.akta)
+        this.currentImage.push(this.applicant.foto)
+        this.formEdit.kk = null
+        this.formEdit.akta = null
+        this.formEdit.foto = null
+        this.dialog = true
+      } else {
+        if (this.applicant.data[this.activeTag]) {
+          this.formEdit = this.applicant.data[this.activeTag]
+          this.formEdit.birthdate = new Date(this.applicant.data[this.activeTag].birthdate.seconds * 1000).toISOString().substr(0, 10),
+          this.dialogEditRelation = true
+        }
+      }
+    },
+    async addApplicantRelation() {
+      await this.$store.dispatch('postApplicantRelation', { id: this.id, data: this.formAdd })
+      await this.getApplicant()
+      this.dialogAdd = false
+    },
+    async updateApplicantRelation() {
+      await this.$store.dispatch('postApplicantRelation', { id: this.id, data: this.formEdit })
+      await this.getApplicant()
+      this.dialogEditRelation = false
     },
     async updateApplicant() {
       await this.formList.forEach(i => {
@@ -206,6 +443,12 @@ export default {
       this.formEdit = {}
       this.formEdit.image = []
       this.dialog = false
+    },
+    async verifApplicant() {
+      let data = { status: 'Lolos verifikasi berkas' }
+      await this.$store.dispatch('putApplicant', { id: this.id, data: data })
+      await this.getApplicant()
+      this.dialogConfirm = false
     },
     uploadImage(file) {
       let uid = this.applicant.registrarUID

@@ -25,7 +25,8 @@
             column
             class="mt-2 white--text" >
             <span class="mb-n1 subtitle-1 font-weight-bold">{{ userProfile.name }}</span>
-            <span class="caption font-weight-light">{{ userProfile.phoneNumber }}</span>
+            <span class="caption font-weight-light" v-if="userProfile.phoneNumber">{{ userProfile.phoneNumber }}</span>
+            <span class="caption font-weight-light" v-if="userProfile.email">{{ userProfile.email }}</span>
           </v-layout>
         </v-list-item-content>
       </v-list-item>

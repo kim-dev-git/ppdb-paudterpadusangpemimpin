@@ -20,7 +20,11 @@ auth.onAuthStateChanged(user => {
   }
 
   if (user) {
-    store.dispatch('authUser', { user: user, phoneNumber: user.phoneNumber.substring(3) })
+    let phoneNumber = ''
+    let email = ''
+    if(user.phoneNumber) { phoneNumber = user.phoneNumber.substring(3) }
+    if(user.email) { email = user.email }
+    store.dispatch('authUser', { user: user, phoneNumber: phoneNumber, email: email })
     // store.dispatch('fetchUserProfile', user)
   }
 })

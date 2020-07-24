@@ -23,6 +23,11 @@ Vue.use(VueRouter)
     component: lazyLoad('Login'),
   },
   {
+    path: '/loginadmin',
+    name: 'LoginAdmin',
+    component: lazyLoad('LoginAdmin'),
+  },
+  {
     path: '/daftar',
     name: 'SignUp',
     component: lazyLoad('SignUp'),
@@ -36,17 +41,26 @@ Vue.use(VueRouter)
     path: '/profil',
     name: 'Profile',
     component: lazyLoad('Profile'),
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: '/calonsiswa',
     name: 'Applicants',
     component: lazyLoad('Applicants'),
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: '/calonsiswa/:id',
     name: 'Applicant',
     props: true,
     component: lazyLoad('Applicant'),
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: '/about',

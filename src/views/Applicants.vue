@@ -4,11 +4,10 @@
     <v-main v-if="userProfile && userProfile.name">
       <v-layout column>
         <v-sheet color="grey lighten-3">
-          <p class="mb-0 px-3 py-1 subtitle-2 text--secondary">Calon siswa yang anda daftarkan</p>
+          <p class="mb-0 px-3 py-1 subtitle-2 text--secondary" v-if="userProfile.role === 'Pendaftar'">Calon siswa yang anda daftarkan</p>
+          <p class="mb-0 px-3 py-1 subtitle-2 text--secondary" v-else>Calon siswa yang mendaftar</p>
         </v-sheet>
-        <v-layout column v-if="loading">
-          Sedang memuat...
-        </v-layout>
+        <loading v-if="loading" />
         <v-list two-line v-else>
           <v-list-item
             v-for="applicant in applicants" :key="applicant.id"
@@ -21,7 +20,7 @@
             </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title class="font-weight-bold">{{ applicant.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ applicant.birthplace }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ applicant.status }}</v-list-item-subtitle>
               </v-list-item-content>
           </v-list-item>
         </v-list>
@@ -105,10 +104,12 @@
 
 import { mapState } from 'vuex'
 import TopNavigation from '@/components/Navigation/TopNavigation'
+import Loading from '@/components/Loading'
 import { storage } from '@/firebase.js'
 export default {
   components: {
-    TopNavigation
+    TopNavigation,
+    Loading,
   },
   data: () => ({
     dialog: false,

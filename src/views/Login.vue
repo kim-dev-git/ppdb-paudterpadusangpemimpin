@@ -29,7 +29,14 @@
           class="pb-4 font-weight-medium white"
         >
           <v-layout
-            class="pl-2 pr-6 bottom">
+            class="pl-2 pr-6 bottom align-center">
+            <v-btn
+              text
+              color="primary"
+              class="ml-n2 text-none"
+              to="/loginadmin" >
+              Login sebagai admin
+            </v-btn>
             <v-spacer />
             <v-btn @click="sendOTP()"
               icon large color="white" class="primary">
@@ -83,7 +90,6 @@
               Tidak mendapat kode OTP?
             </v-btn>
           </v-layout>
-          {{ otp }}
         </v-layout>
       </v-card>
     </v-dialog>

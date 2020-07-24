@@ -72,8 +72,7 @@ export default new Vuex.Store({
       await db.collection('users').doc(user.uid).set({
         name: form.name,
         email: form.email,
-        role: form.role,
-        position: form.position,
+        role: 'Admin',
       })
 
       commit('setLoading', false)
@@ -89,7 +88,7 @@ export default new Vuex.Store({
       router.push('/login')
     },
 
-    async authUser({ dispatch, commit }, { user, phoneNumber }) {
+    async authUser({ dispatch, commit }, { user, phoneNumber, email }) {
       commit('setLoading', true)
       let document = usersRef.doc(user.uid)
       await document.get().then(doc => {
@@ -99,12 +98,19 @@ export default new Vuex.Store({
           commit('setLoading', false)
         } else {
           // Create new user
-          console.log(document)
-          document.set({ 'phoneNumber': `+62${phoneNumber}`, 'role': 'Pendaftar' }, { merge: true }).then(doc => {
-            console.log('Doc:', doc)
-          })
-          commit('setLoading', false)
-          
+          // console.log(document)
+          if (phoneNumber !== '') {
+            document.set({ 'phoneNumber': `+62${phoneNumber}`, 'role': 'Pendaftar' }, { merge: true }).then(doc => {
+              // console.log('Doc:', doc)
+            })
+            commit('setLoading', false)
+          }
+          if (email !== '') {
+            document.set({ 'email': email, 'role': 'Admin' }, { merge: true }).then(doc => {
+              // console.log('Doc:', doc)
+            })
+            commit('setLoading', false)
+          }
 
           // Api.set('users', uid, { 'phoneNumber': `+62${phoneNumber}`, 'role': 'Pengunjung' })
           // //console.log('Create new user with:', uid, phoneNumber)
@@ -134,7 +140,18 @@ export default new Vuex.Store({
       data.registrarName = user.name
       data.birthdate = Timestamp.fromDate(new Date(data.birthdate))
       data.createdAt = Timestamp.fromDate(new Date())
+      data.status = 'Verifikasi berkas'
       await applicantsRef.add(data).then(doc => {
+        console.log('Berhasil ditambah:', doc)
+      })
+      commit('setLoading', false)
+    },
+
+    async postApplicantRelation({ commit }, { id, data }) {
+      commit('setLoading', true)
+      data.birthdate = Timestamp.fromDate(new Date(data.birthdate))
+      data.createdAt = Timestamp.fromDate(new Date())
+      await applicantsRef.doc(id).collection('data').doc(data.relation).set(data, { merge: true }).then(doc => {
         console.log('Berhasil ditambah:', doc)
       })
       commit('setLoading', false)
@@ -143,10 +160,13 @@ export default new Vuex.Store({
     async getApplicants({ commit }, { user }) {
       commit('setLoading', true)
       let applicants = ''
-      // if (user.role === 'Pendaftar')
-      // applicants = applicantsRef.where('registrar', '==', user.uid)
+      if (user.role === 'Pendaftar') {
+        applicants = applicantsRef.where('registrarUID', '==', user.uid)
+      } else if (user.role === 'Admin') {
+        applicants = applicantsRef
+      }
       var array = []
-      await applicantsRef.where('registrarUID', '==', user.uid).get().then(snapshot => {
+      await applicants.get().then(snapshot => {
         snapshot.forEach(doc => {
           var obj = doc.data()
           obj.id = doc.id
@@ -162,13 +182,25 @@ export default new Vuex.Store({
 
     async getApplicant({ commit }, { id }) {
       commit('setLoading', true)
+      let result 
       await applicantsRef.doc(id).get().then(doc => {
         var obj = doc.data()
         obj.id = id
-        commit('setApplicant', obj)
+        result = obj
         commit('setLoading', false)
       }).catch(error => {
         console.log('Error getting documents at getApplicant:', error)
+        commit('setLoading', false)
+      })
+
+      let relation = {}
+      await applicantsRef.doc(id).collection('data').get().then(snapshot => {
+        snapshot.forEach(res => {
+          var data = res.data()
+          relation[data.relation] = data
+        })
+        result.data = relation
+        commit('setApplicant', result)
         commit('setLoading', false)
       })
     },
@@ -176,7 +208,7 @@ export default new Vuex.Store({
     async putApplicant({ commit }, { id, data }) {
       // console.log('Data:', data)
       commit('setLoading', true)
-      data.birthdate = Timestamp.fromDate(new Date(data.birthdate))
+      if (data.birthdate) { data.birthdate = Timestamp.fromDate(new Date(data.birthdate)) }
       data.editedAt = Timestamp.fromDate(new Date())
       await applicantsRef.doc(id).set(data, { merge: true }).then(() => {
         console.log('Data ' + data.name + ' berhasil diedit')
