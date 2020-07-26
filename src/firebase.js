@@ -23,6 +23,9 @@ const storage = firebase.storage()
 const RecaptchaVerifier = firebase.auth.RecaptchaVerifier
 const { Timestamp } = firebase.firestore
 
+// Offline support
+db.enablePersistence()
+
 // export utils/refs
 export {
   db,

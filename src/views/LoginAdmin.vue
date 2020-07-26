@@ -127,8 +127,15 @@ export default {
     }
   },
   mounted() {
-    if (this.userProfile) {
+    if (this.userProfile.role) {
       this.$router.replace('/')
+    }
+  },
+  watch: {
+    userProfile(value){
+      if (value && value.role) {
+        this.$router.replace('/')
+      }
     }
   }
 }
