@@ -489,8 +489,9 @@ export default {
       this.dialogConfirm = false
     },
     async removeApplicant() {
-      await this.$store.dispatch('removeApplicant', this.selectedApplicant.id)
+      await this.$store.dispatch('removeApplicant', this.id)
       this.removeDialog = false
+      this.$router.push('/calonsiswa')
     },
     uploadImage(file) {
       let uid = this.applicant.registrarUID

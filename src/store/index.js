@@ -221,6 +221,15 @@ export default new Vuex.Store({
       commit('setLoading', false)
     },
 
+    async removeApplicant({ commit }, id) {
+      // console.log('ID:', id)
+      commit('setLoading', true)
+      await applicantsRef.doc(id).delete().then(() => {
+        console.log('ID ' + id + ' berhasil dihapus')
+      })
+      commit('setLoading', false)
+    },
+
 
     /// Test Scores
     async getTestScores({ commit }, { user }) {
