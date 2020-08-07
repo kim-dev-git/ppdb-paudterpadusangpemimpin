@@ -71,7 +71,8 @@ export default {
       { title: 'Dashboard', icon: 'mdi-view-dashboard-outline', link: '/' },
       { title: 'Profil', icon: 'mdi-account-outline', link: '/profil' },
       { title: 'Calon Siswa', icon: 'mdi-account-supervisor-outline', link: '/calonsiswa' },
-      { title: 'About', icon: 'mdi-help-box', link: '/about' },
+      { title: 'Nilai Tes', icon: 'mdi-counter', link: '/nilaites' },
+      // { title: 'About', icon: 'mdi-help-box', link: '/about' },
     ],
   }),
   computed: {

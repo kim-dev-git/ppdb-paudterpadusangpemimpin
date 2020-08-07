@@ -1,13 +1,15 @@
 <template>
   <div id="dashboard">
     <top-navigation />
-    <v-layout
-      column
-      v-if="userProfile && Object.keys(userProfile).length > 1">
-      <v-card class="mt-12 pa-4">
-        Halaman dashboard
-      </v-card>
-    </v-layout>
+    <v-main>
+      <v-layout
+        column
+        v-if="userProfile && Object.keys(userProfile).length > 1">
+        <v-card class="pa-4">
+          Halaman dashboard
+        </v-card>
+      </v-layout>
+    </v-main>
   </div>
 </template>
 

@@ -7,6 +7,7 @@ Vue.use(Vuex)
 
 let usersRef = db.collection('users')
 let applicantsRef = db.collection('applicants')
+let testScoresRef = db.collection('testScores')
 
 export default new Vuex.Store({
   state: {
@@ -14,7 +15,8 @@ export default new Vuex.Store({
     loading: false,
     userProfile: {},
     applicants: [],
-    applicant: {}
+    applicant: {},
+    testScores: [],
   },
   mutations: {
     setLoading(state, val) {
@@ -28,6 +30,9 @@ export default new Vuex.Store({
     },
     setApplicant(state, val) {
       state.applicant = val
+    },
+    setTestScores(state, val) {
+      state.testScores = val
     },
   },
   actions: {
@@ -213,6 +218,41 @@ export default new Vuex.Store({
       await applicantsRef.doc(id).set(data, { merge: true }).then(() => {
         console.log('Data ' + data.name + ' berhasil diedit')
       })
+      commit('setLoading', false)
+    },
+
+
+    /// Test Scores
+    async getTestScores({ commit }, { user }) {
+      commit('setLoading', true)
+      let testScores = ''
+      if (user.role === 'Pendaftar') {
+        testScores = testScoresRef.where('registrarUID', '==', user.uid)
+      } else if (user.role === 'Admin') {
+        testScores = testScoresRef
+      }
+      var array = []
+      await testScores.get().then(snapshot => {
+        snapshot.forEach(doc => {
+          var obj = doc.data()
+          obj.id = doc.id
+          array.push(obj)
+        })
+        commit('setTestScores', array)
+        commit('setLoading', false)
+      }).catch(error => {
+        console.log('Error getting documents at getTestScores:', error)
+        commit('setLoading', false)
+      })
+    },
+
+    async postTestScore({ commit }, { user, data }) {
+      commit('setLoading', true)
+      let id = data.id
+      delete data.id
+      data.createdAt = Timestamp.fromDate(new Date())
+      await testScoresRef.doc(id).set(data, { merge: true })
+      await applicantsRef.doc(id).set({ status: 'Input Nilai Tes'}, { merge: true })
       commit('setLoading', false)
     },
 

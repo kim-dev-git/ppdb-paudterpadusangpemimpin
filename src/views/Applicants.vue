@@ -38,7 +38,7 @@
       </v-btn>
     </v-main>
 
-    <v-dialog
+    <v-dialog id="add-dialog"
       fullscreen
       hide-overlay
       transition="dialog-bottom-transition"
@@ -97,6 +97,8 @@
         </v-layout> -->
       </v-card>
     </v-dialog>
+
+    
   </div>
 </template>
 
@@ -124,12 +126,12 @@ export default {
       { label: 'Agama', value: 'religion', type: 'combobox', items: ['Islam', 'Protestan', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu'] },
       { label: 'Jenis Kelamin', value: 'gender', type: 'combobox', items: ['Laki-laki', 'Perempuan'] },
       { label: 'NIK Anak', value: 'nik', type: 'number' },
-      { label: 'Berat (kg)', value: 'wight', type: 'number' },
+      { label: 'Berat (kg)', value: 'weight', type: 'number' },
       { label: 'Tinggi (cm)', value: 'height', type: 'number' },
       { label: 'Kartu Keluarga', value: 'kk', type: 'file' },
       { label: 'Akta Kelahiran', value: 'akta', type: 'file' },
       { label: 'Pas Foto', value: 'foto', type: 'file' },
-    ]
+    ],
   }),
   computed: {
     ...mapState(['userProfile', 'applicants', 'loading']),

@@ -12,14 +12,20 @@
         </v-btn>
         <v-card-title class="font-weight-regular">{{ 'Data ' + applicant.name }}</v-card-title>
         <v-spacer />
-        <v-btn
+        <v-btn id="delete-button"
+          icon
+          class="mr-n4"
+          @click="removeDialog = true" >
+          <v-icon>mdi-delete</v-icon>
+        </v-btn>
+        <v-btn id="edit-button"
           icon
           class="mr-n4"
           @click="editApplicant()"
           v-if="userProfile.uid === applicant.registrarUID" >
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
-        <v-btn
+        <v-btn id="add-button"
           icon
           class="mr-n4"
           @click="dialogAdd = true"
@@ -61,7 +67,7 @@
             <v-btn
               icon
               color="primary"
-              v-if="applicant.status === 'Verifikasi berkas'"
+              v-if="applicant.status === 'Verifikasi berkas' && userProfile.role === 'Admin'"
               @click="dialogConfirm = true">
               <v-icon>mdi-check</v-icon>
             </v-btn>
@@ -257,6 +263,37 @@
           </v-layout>
         </v-card>
       </v-dialog>
+
+      <v-dialog id="remove-dialog"
+        v-model="removeDialog"
+        width="400"
+      >
+        <v-card class="pa-4 pt-6">
+          <v-card-text v-if="applicant">
+            Yakin ingin menghapus data calon siswa <b>{{ applicant.name }}</b>?
+          </v-card-text>
+          <v-card-actions>
+            <v-layout class="justify-end">
+              <v-btn
+                text
+                color="grey"
+                class="text-none"
+                @click="removeDialog = false"
+              >
+                Batal
+              </v-btn>
+              <v-btn
+                text
+                color="error"
+                class="text-none"
+                @click="removeApplicant()"
+              >
+                Hapus
+              </v-btn>
+            </v-layout>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-main>
 
     <v-dialog id="dialogEdit"
@@ -367,6 +404,7 @@ export default {
       { label: 'Pekerjaan', value: 'job', type: 'text' },
       { label: 'Penghasilan perbulan', value: 'salary', type: 'number', prefix: 'Rp.' },
     ],
+    removeDialog: false,
   }),
   computed: {
     ...mapState(['applicant', 'loading', 'userProfile']),
@@ -449,6 +487,10 @@ export default {
       await this.$store.dispatch('putApplicant', { id: this.id, data: data })
       await this.getApplicant()
       this.dialogConfirm = false
+    },
+    async removeApplicant() {
+      await this.$store.dispatch('removeApplicant', this.selectedApplicant.id)
+      this.removeDialog = false
     },
     uploadImage(file) {
       let uid = this.applicant.registrarUID

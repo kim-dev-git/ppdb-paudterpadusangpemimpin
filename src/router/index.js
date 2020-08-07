@@ -63,6 +63,14 @@ Vue.use(VueRouter)
     }
   },
   {
+    path: '/nilaites',
+    name: 'TestScores',
+    component: lazyLoad('TestScores'),
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
     path: '/about',
     name: 'About',
     // route level code-splitting
