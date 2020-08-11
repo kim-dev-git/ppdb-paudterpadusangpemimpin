@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { auth, db, Timestamp } from '../firebase'
+import { auth, db, Timestamp, increment } from '../firebase'
 import router from '../router/index'
 
 Vue.use(Vuex)
@@ -8,6 +8,8 @@ Vue.use(Vuex)
 let usersRef = db.collection('users')
 let applicantsRef = db.collection('applicants')
 let testScoresRef = db.collection('testScores')
+let studentsRef = db.collection('students')
+let tuitionsRef = db.collection('tuitions')
 
 export default new Vuex.Store({
   state: {
@@ -17,6 +19,15 @@ export default new Vuex.Store({
     applicants: [],
     applicant: {},
     testScores: [],
+    lastNIS: null,
+    students: [],
+    tuitions: [],
+    tuition: null,
+  },
+  getters: {
+    applicantsPassed(state) {
+      return state.applicants.filter(applicant => applicant.status == 'Input Nilai Tes')
+    }
   },
   mutations: {
     setLoading(state, val) {
@@ -33,6 +44,18 @@ export default new Vuex.Store({
     },
     setTestScores(state, val) {
       state.testScores = val
+    },
+    setLastNIS(state, val) {
+      state.lastNIS = val
+    },
+    setStudents(state, val) {
+      state.students = val
+    },
+    setTuitions(state, val) {
+      state.tuitions = val
+    },
+    setTuition(state, val) {
+      state.tuition = val
     },
   },
   actions: {
@@ -139,7 +162,7 @@ export default new Vuex.Store({
     },
 
     /// Applicants
-    async postApplicants({ commit }, { user, data }) {
+    async postApplicants({ commit, dispatch, state }, { user, data }) {
       commit('setLoading', true)
       data.registrarUID = user.uid
       data.registrarName = user.name
@@ -149,6 +172,7 @@ export default new Vuex.Store({
       await applicantsRef.add(data).then(doc => {
         console.log('Berhasil ditambah:', doc)
       })
+      // await dispatch('getApplicants', { user: state.userProfile })
       commit('setLoading', false)
     },
 
@@ -265,6 +289,186 @@ export default new Vuex.Store({
       commit('setLoading', false)
     },
 
+
+    /// Get Last NIS
+    async getLastNIS({ commit }) {
+      commit('setLoading', true)
+
+      const year = new Date().getFullYear()
+      const month = Number(new Date().getMonth()) + 1
+
+      const ref = db.collection('nis').doc(String(year))
+      await ref.get()
+      .then(snapshoot => {
+        if (snapshoot.exists) {
+          var data = snapshoot.data()
+          if (data[month] !== undefined) {
+            commit('setLastNIS', data[String(month)])
+          } else {
+            ref.set({
+              [String(month)]: 0
+            }, { merge: true })
+            .then(() => { commit('setLastNIS', 0) })
+          }
+        } else {
+          ref.set({
+            [String(month)]: 0
+          }, { merge: true })
+          .then(() => { commit('setLastNIS', 0) })
+        }
+      })
+      
+      commit('setLoading', false)
+    },
+
+    async incLastNIS({ commit, dispatch }) {
+      commit('setLoading', true)
+
+      const year = new Date().getFullYear()
+      const month = Number(new Date().getMonth()) + 1
+      const inc = increment(1)
+
+      const ref = db.collection('nis').doc(String(year))
+      await ref.set({
+        [month]: inc
+      }, { merge: true })
+
+      dispatch('getLastNIS')
+      
+      commit('setLoading', false)
+    },
+
+    /// Students
+    async getStudents({ commit }, { user }) {
+      commit('setLoading', true)
+      let students = ''
+      if (user.role === 'Pendaftar') {
+        students = studentsRef.where('registrarUID', '==', user.uid)
+      } else if (user.role === 'Admin') {
+        students = studentsRef
+      }
+      var array = []
+      await studentsRef.get().then(snapshot => {
+        snapshot.forEach(doc => {
+          var obj = doc.data()
+          obj.id = doc.id
+          array.push(obj)
+        })
+        commit('setStudents', array)
+        commit('setLoading', false)
+      }).catch(error => {
+        console.log('Error getting documents at getStudents:', error)
+        commit('setLoading', false)
+      })
+    },
+
+    async postStudent({ commit, state, dispatch }, { student, group }) {
+      commit('setLoading', true)
+
+      student.applicantID = student.id
+      student.group = group
+      let id = student.id
+      delete student.id
+      student.createdAt = Timestamp.fromDate(new Date())
+      var lastNIS = Number(state.lastNIS)
+      await dispatch('getLastNIS').then(() => lastNIS = state.lastNIS)
+      var classCode = ''
+      if (group.substr(0, 2) === 'TK') {
+        classCode = '01'
+      } else {
+        classCode = '02'
+      }
+      var currentYear = Number(String(new Date().getFullYear()).slice(-2))
+      var stringNIS = ''
+      if(String(lastNIS).length === 1) {
+        stringNIS = '00' + lastNIS
+      } else if(String(lastNIS).length === 2) {
+        stringNIS = '0' + lastNIS
+      } else {
+        stringNIS = String(lastNIS)
+      }
+      console.log(stringNIS)
+      console.log(String(lastNIS).length)
+      var nis = '' + currentYear + (currentYear+1) + classCode + stringNIS
+      await studentsRef.doc(nis).set(student)
+      await dispatch('putApplicant', {
+        id: student.applicantID,
+        data: { status: 'Lulus' }
+      })
+      // await dispatch('incLastNIS')
+      await dispatch('getApplicants', { user: state.userProfile })
+
+      commit('setLoading', true)
+    },
+
+    /// Tuition
+    async getTuitions({ commit, state }) {
+      commit('setLoading', true)
+      const user = state.userProfile
+      let tuitions = ''
+      if (user.role === 'Pendaftar') {
+        tuitions = tuitionsRef.where('registrarUID', '==', user.uid)
+      } else if (user.role === 'Admin') {
+        tuitions = tuitionsRef
+      }
+      var array = []
+      await tuitionsRef.get().then(snapshot => {
+        snapshot.forEach(doc => {
+          var obj = doc.data()
+          obj.id = doc.id
+          array.push(obj)
+        })
+        commit('setTuitions', array)
+        commit('setLoading', false)
+      }).catch(error => {
+        console.log('Error getting documents at getTuitions:', error)
+        commit('setLoading', false)
+      })
+    },
+
+    async getTuition({ commit }, { id }) {
+      commit('setLoading', true)
+      commit('setTuition', null)
+      let result 
+      await tuitionsRef.doc(id).get().then(doc => {
+        if(doc.exists) {
+          var obj = doc.data()
+          obj.id = id
+          result = obj
+          commit('setTuition', result)
+        } else {
+          console.log('Document tidak ditemukan')
+        }
+        commit('setLoading', false)
+      }).catch(error => {
+        console.log('Error getting documents at getTuition:', error)
+        commit('setLoading', false)
+      })
+
+      let relation = {}
+      await tuitionsRef.doc(id).collection('data').get().then(snapshot => {
+        snapshot.forEach(res => {
+          var data = res.data()
+          relation[data.relation] = data
+        })
+        result.data = relation
+        commit('setApplicant', result)
+        commit('setLoading', false)
+      })
+    },
+
+    async postTuitions({ commit, dispatch, state }, data) {
+      commit('setLoading', true)
+      console.log(data)
+      let id = data.nis
+      delete data.nis
+      data.createdAt = Timestamp.fromDate(new Date())
+      await tuitionsRef.doc(id).set(data).then(doc => {
+        console.log('Berhasil dibayar:', doc)
+      })
+      // await dispatch('getTuitions', { user: state.userProfile })
+      commit('setLoading', false)
+    },
   },
   modules: {
   }

@@ -21,6 +21,7 @@ const db = firebase.firestore()
 const auth = firebase.auth()
 const storage = firebase.storage()
 const RecaptchaVerifier = firebase.auth.RecaptchaVerifier
+const increment = firebase.firestore.FieldValue.increment
 const { Timestamp } = firebase.firestore
 
 // Offline support
@@ -32,5 +33,6 @@ export {
   auth,
   storage,
   RecaptchaVerifier,
-  Timestamp
+  Timestamp,
+  increment
 }

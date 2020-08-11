@@ -71,6 +71,30 @@ Vue.use(VueRouter)
     }
   },
   {
+    path: '/lulustes',
+    name: 'Graduates',
+    component: lazyLoad('Graduates'),
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/spp',
+    name: 'Tuitions',
+    component: lazyLoad('Tuitions'),
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/kelas',
+    name: 'Groups',
+    component: lazyLoad('Groups'),
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
     path: '/about',
     name: 'About',
     // route level code-splitting
