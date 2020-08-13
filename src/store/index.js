@@ -426,45 +426,49 @@ export default new Vuex.Store({
       })
     },
 
-    async getTuition({ commit }, { id }) {
+    async getTuition({ commit, state }, { nis }) {
       commit('setLoading', true)
-      commit('setTuition', null)
-      let result 
-      await tuitionsRef.doc(id).get().then(doc => {
-        if(doc.exists) {
+      var array = []
+      await tuitionsRef .where("nis", "==", nis).get().then(snapshot => {
+        snapshot.forEach(doc => {
           var obj = doc.data()
-          obj.id = id
-          result = obj
-          commit('setTuition', result)
-        } else {
-          console.log('Document tidak ditemukan')
-        }
+          obj.id = doc.id
+          array.push(obj)
+        })
+        commit('setTuition', array)
         commit('setLoading', false)
       }).catch(error => {
         console.log('Error getting documents at getTuition:', error)
         commit('setLoading', false)
       })
-
-      let relation = {}
-      await tuitionsRef.doc(id).collection('data').get().then(snapshot => {
-        snapshot.forEach(res => {
-          var data = res.data()
-          relation[data.relation] = data
-        })
-        result.data = relation
-        commit('setApplicant', result)
-        commit('setLoading', false)
-      })
     },
 
-    async postTuitions({ commit, dispatch, state }, data) {
+    // async getTuition({ commit }, { nis }) {
+    //   commit('setLoading', true)
+    //   commit('setTuition', null)
+    //   let result 
+    //   // await tuitionsRef.doc(id).get().then(doc => {
+    //   //   if(doc.exists) {
+    //   //     var obj = doc.data()
+    //   //     obj.id = id
+    //   //     result = obj
+    //   //     commit('setTuition', result)
+    //   //   } else {
+    //   //     console.log('Document tidak ditemukan')
+    //   //   }
+    //   //   commit('setLoading', false)
+    //   // }).catch(error => {
+    //   //   console.log('Error getting documents at getTuition:', error)
+    //   //   commit('setLoading', false)
+    //   // })
+    // },
+
+    async postTuition({ commit, dispatch, state }, data) {
       commit('setLoading', true)
-      console.log(data)
-      let id = data.nis
-      delete data.nis
       data.createdAt = Timestamp.fromDate(new Date())
-      await tuitionsRef.doc(id).set(data).then(doc => {
-        console.log('Berhasil dibayar:', doc)
+      // console.log(data)
+      await tuitionsRef.add(data).then(doc => {
+        // console.log('Berhasil dibayar:', doc)
       })
       // await dispatch('getTuitions', { user: state.userProfile })
       commit('setLoading', false)

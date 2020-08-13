@@ -30,6 +30,7 @@
           class="pb-4 font-weight-medium white"
         >
           <v-layout
+            v-show="false"
             class="px-4 body-2 text--secondary align-center">
             Belum punya akun?
             <v-btn text @click="dialog = true" class="text-none ml-n2" color="primary">Daftar</v-btn>
