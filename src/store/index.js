@@ -13,6 +13,7 @@ let tuitionsRef = db.collection('tuitions')
 
 export default new Vuex.Store({
   state: {
+    serviceWorkerNotification: null,
     drawer: true,
     loading: false,
     userProfile: {},
@@ -30,6 +31,9 @@ export default new Vuex.Store({
     }
   },
   mutations: {
+    setServiceWorkerNotification(state, val) {
+      state.serviceWorkerNotification = val
+    },
     setLoading(state, val) {
       state.loading = val
     },
@@ -59,6 +63,10 @@ export default new Vuex.Store({
     },
   },
   actions: {
+    postServiceWorkerNotification({ commit }, val) {
+      commit('setServiceWorkerNotification', val)
+    },
+
     async login({ dispatch, commit }, form) {
       commit('setLoading', true)
       // sign user in
@@ -426,33 +434,29 @@ export default new Vuex.Store({
       })
     },
 
-    async getTuition({ commit }, { id }) {
+    async getTuition({ commit }, { nis }) {
       commit('setLoading', true)
-      commit('setTuition', null)
-      let result 
-      await tuitionsRef.doc(id).get().then(doc => {
-        if(doc.exists) {
+      // const user = state.userProfile
+      // let tuitions = ''
+
+      // if (user.role === 'Pendaftar') {
+      //   tuitions = tuitionsRef.where('registrarUID', '==', user.uid)
+      // } else if (user.role === 'Admin') {
+      //   tuitions = tuitionsRef
+      // }
+      var array = []
+      await tuitionsRef.get().then(snapshot => {
+        snapshot.forEach(doc => {
           var obj = doc.data()
-          obj.id = id
-          result = obj
-          commit('setTuition', result)
-        } else {
-          console.log('Document tidak ditemukan')
-        }
+          obj.id = doc.id
+          if(obj.nis === nis) {
+            array.push(obj)
+          }
+        })
+        commit('setTuition', array)
         commit('setLoading', false)
       }).catch(error => {
         console.log('Error getting documents at getTuition:', error)
-        commit('setLoading', false)
-      })
-
-      let relation = {}
-      await tuitionsRef.doc(id).collection('data').get().then(snapshot => {
-        snapshot.forEach(res => {
-          var data = res.data()
-          relation[data.relation] = data
-        })
-        result.data = relation
-        commit('setApplicant', result)
         commit('setLoading', false)
       })
     },
@@ -461,7 +465,7 @@ export default new Vuex.Store({
       commit('setLoading', true)
       console.log(data)
       let id = data.nis
-      delete data.nis
+      // delete data.nis
       data.createdAt = Timestamp.fromDate(new Date())
       await tuitionsRef.doc(id).set(data).then(doc => {
         console.log('Berhasil dibayar:', doc)
