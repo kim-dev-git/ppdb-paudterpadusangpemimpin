@@ -2,6 +2,7 @@ import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/firestore'
 import 'firebase/storage'
+import 'firebase/messaging'
 
 // firebase init - add your own config here
 const firebaseConfig = {
@@ -23,6 +24,7 @@ const storage = firebase.storage()
 const RecaptchaVerifier = firebase.auth.RecaptchaVerifier
 const increment = firebase.firestore.FieldValue.increment
 const { Timestamp } = firebase.firestore
+const messaging = firebase.messaging()
 
 // Offline support
 db.enablePersistence()
@@ -32,6 +34,7 @@ export {
   db,
   auth,
   storage,
+  messaging,
   RecaptchaVerifier,
   Timestamp,
   increment

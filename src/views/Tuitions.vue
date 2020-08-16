@@ -374,7 +374,7 @@ export default {
       data.month = this.month
       data.year = this.year
       data.spp = this.spp
-      await this.$store.dispatch('postTuition', data)
+      await this.$store.dispatch('postTuitions', data)
       await this.getTuition()
       this.dialogPay = false
     },
