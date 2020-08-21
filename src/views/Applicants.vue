@@ -27,6 +27,7 @@
       </v-layout>
 
       <v-btn
+        v-if="userProfile.role === 'Pendaftar'"
         @click="dialog = true"
         fixed
         fab

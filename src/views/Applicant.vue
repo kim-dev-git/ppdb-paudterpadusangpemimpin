@@ -12,6 +12,12 @@
         </v-btn>
         <v-card-title class="font-weight-regular">{{ 'Data ' + applicant.name }}</v-card-title>
         <v-spacer />
+        <v-btn id="print-button"
+          icon
+          class="mr-n4"
+          @click="print()" >
+          <v-icon>mdi-printer</v-icon>
+        </v-btn>
         <v-btn id="delete-button"
           icon
           class="mr-n4"
@@ -70,6 +76,16 @@
               v-if="applicant.status === 'Verifikasi berkas' && userProfile.role === 'Admin'"
               @click="dialogConfirm = true">
               <v-icon>mdi-check</v-icon>
+            </v-btn>
+            <v-btn
+              dark
+              rounded
+              small
+              color="error"
+              v-if="applicant.status === 'Verifikasi berkas' && userProfile.role === 'Admin' || applicant.status === 'Input Nilai Tes' && userProfile.role === 'Admin' || applicant.status === 'Lolos verifikasi berkas' && userProfile.role === 'Admin'"
+              @click="applicantNotPass()">
+              <v-icon left>mdi-close-circle-outline</v-icon>
+              <span v-text="'Tidak Lulus'" />
             </v-btn>
           </v-layout>
         </v-card>
@@ -354,6 +370,11 @@
 </template>
 
 <script>
+
+import logo from '@/assets/logo.js'
+import footer from '@/assets/footer.js'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 import moment from 'moment'
 import { storage } from '@/firebase.js'
 import { mapState } from 'vuex'
@@ -493,6 +514,12 @@ export default {
       this.removeDialog = false
       this.$router.push('/calonsiswa')
     },
+    async applicantNotPass() {
+      let data = { status: 'Tidak Lulus' }
+      await this.$store.dispatch('putApplicant', { id: this.id, data: data })
+      await this.getApplicant()
+      this.dialogConfirm = false
+    },
     uploadImage(file) {
       let uid = this.applicant.registrarUID
       const storageRef = storage.ref('applicants/' + uid + '/' + file.name)
@@ -519,6 +546,51 @@ export default {
           this.formEdit.image.push(downloadURL)
         })
       })
+    },
+    print() {
+      var item = this.applicant
+      var header = this.formList
+      var applicant = this.applicant
+      var doc = new jsPDF()
+      const imgData = logo
+      const imgFooter = footer
+      
+      doc.addImage(imgData, "JPEG", 10, 22, null, null)
+      doc.setFontSize("20")
+      // doc.setFontStyle("bold")
+      doc.text("Data Calon Siswa", 105, 20, null, null, "center")
+      doc.setFontSize("14")
+      // doc.setFontStyle("normal")
+      doc.text("Jl. Keramat Raya No.01, RT.18", 105, 27, null, null, "center")
+      doc.text("Sungai Bilu, Banjarmasin", 105, 33, null, null, "center")
+      doc.setFontSize("12")
+      doc.text("Kontak: 081256361363", 105, 39, null, null, "center")
+      doc.line(10, 46, 200, 46)
+      var xStart = 14
+      var yStart = 56
+      var xSpace = 64
+      var ySpace = 6
+      header.forEach(data => {
+        if (data.value !== 'kk' && data.value !== 'akta' && data.value !== 'foto') {
+          doc.text(data.label, xStart, yStart, null, null)
+          if (data.type === 'date') {
+            doc.text(`: ${ this.toDate(applicant[data.value].seconds) }`, xStart + xSpace, yStart, null, null)
+          } else {
+            doc.text(`: ${ applicant[data.value] }`, xStart + xSpace, yStart, null, null)
+          }
+          yStart = yStart + 6
+        }
+      })
+      if (item.status === 'Lulus' || item.status === 'Tidak Lulus') {
+        doc.text(`Calon siswa bernama ${item.name} dinyatakan :`, 105, yStart + 10, null, null, "center")
+        doc.setFontSize("24")
+        doc.text(item.status.toUpperCase(), 105, yStart + 24, null, null, "center")
+      }
+      let height = doc.internal.pageSize.getHeight()
+      console.log(Math.round(height))
+      doc.addImage(imgFooter, "PNG", 0, height - 60, 210, 60)
+      doc.save(`${item.nik}-${item.name}.pdf`)
+      doc.autoPrint()
     }
   },
   created() {

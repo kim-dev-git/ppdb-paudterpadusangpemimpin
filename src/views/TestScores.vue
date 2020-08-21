@@ -6,7 +6,8 @@
         <v-sheet color="grey lighten-3" class="mb-0 px-3 py-2 subtitle-2 ">
           <v-layout class="align-center">
             <p class="mb-0 text--secondary">Nilai tes calon siswa</p>
-            <v-spacer />
+            <v-spacer />            
+
             <v-tooltip left v-if="userProfile.role !== 'Pendaftar'">
               <template v-slot:activator="{ on, attrs }">
                 <v-icon
@@ -114,8 +115,14 @@
           <v-spacer />
           <p class="mb-0 title" v-if="selectedApplicant">{{ selectedApplicant.name }}</p>
           <v-spacer />
+          <v-btn
+            small depressed color="primary" class="text-none" @click="print()">
+            <v-icon v-text="'mdi-printer'" left />
+            Print
+          </v-btn>
           <v-btn v-if="userProfile.role !== 'Pendaftar'"
-            small depressed color="primary" class="text-none" @click="postTestScore()">Simpan</v-btn>
+            small depressed color="primary" class="text-none" @click="postTestScore()">Simpan
+          </v-btn>
         </v-layout>
         <v-sheet color="grey lighten-3">
           <p class="mb-0 px-3 py-1 subtitle-2 text--disabled" v-if="userProfile.role !== 'Pendaftar'">Klik pada subjek untuk mengedit nilai</p>
@@ -157,6 +164,10 @@
 
 <script>
 
+import logo from '@/assets/logo.js'
+import footer from '@/assets/footer.js'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 import { mapState } from 'vuex'
 import TopNavigation from '@/components/Navigation/TopNavigation'
 import Loading from '@/components/Loading'
@@ -254,6 +265,84 @@ export default {
       await this.$store.dispatch('postTestScore', { user, data })
       this.dialog = false
       this.getTestScores()
+    },
+    print() {
+
+      
+      var item = this.selectedApplicant
+      console.log(this.selectedApplicant)
+
+      var header = this.formList
+      var applicant = this.applicant
+      var doc = new jsPDF()
+      const imgData = logo
+      const imgFooter = footer
+      
+      doc.addImage(imgData, "JPEG", 10, 22, null, null)
+      doc.setFontSize("20")
+      // doc.setFontStyle("bold")
+      doc.text(`Hasil Nilai Tes ${ item.name }`, 105, 20, null, null, "center")
+      doc.setFontSize("14")
+      // doc.setFontStyle("normal")
+      doc.text("Jl. Keramat Raya No.01, RT.18", 105, 27, null, null, "center")
+      doc.text("Sungai Bilu, Banjarmasin", 105, 33, null, null, "center")
+      doc.setFontSize("12")
+      doc.text("Kontak: 081256361363", 105, 39, null, null, "center")
+      doc.line(10, 46, 200, 46)
+      var xStart = 14
+      var yStart = 56
+      var xSpace = 64
+      var ySpace = 6
+
+      const subjects = this.subjects
+
+      var body = []
+
+      subjects.forEach(subject => {
+        body.push({
+          subject: subject.name,
+          score: item[subject.abbreviation]
+        })
+      })
+
+      doc.autoTable({
+        startY: yStart,
+        columns: [
+          { header: 'Subjek', dataKey: 'subject' },
+          { header: 'Nilai', dataKey: 'score' },
+        ],
+        body: body
+      })
+
+      yStart = doc.autoTable.previous.finalY + 10
+
+      doc.text('Keterangan Nilai:', xStart, yStart, null, null)
+
+      yStart = yStart + ySpace
+
+      const scores = this.scores
+
+      scores.forEach(score => {
+        doc.text(score.abbreviation, xStart, yStart, null, null)
+        doc.text(`: ${ score.name }`, xStart + 32, yStart, null, null)
+        yStart = yStart + ySpace
+      })
+
+      doc.setFontSize("10")
+
+      doc.text('Nilai tes hanya untuk mengukur kemampuan calon siswa.', xStart, yStart + 6, null, null)
+
+      yStart = yStart + ySpace
+
+      // doc.text('Lulus tidaknya calon siswa tergantung.', xStart, yStart + 6, null, null)
+
+      yStart = yStart + ySpace
+
+      let height = doc.internal.pageSize.getHeight()
+      console.log(Math.round(height))
+      doc.addImage(imgFooter, "PNG", 0, height - 60, 210, 60)
+      doc.save(`Hasil Nilai Tes - ${ item.name }.pdf`)
+      doc.autoPrint()
     }
   },
   watch: {

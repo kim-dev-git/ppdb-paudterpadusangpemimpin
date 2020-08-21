@@ -195,9 +195,11 @@
           v-model="month"
           class="mb-n2"
         />
-        <v-text-field id="input-spp"
+        <v-combobox id="input-spp"
+          v-if="selectedStudent && selectedStudent.group"
           solo
           flat
+          :items="selectedStudent.group.substring(0, 2) === 'KB' ? [400000] : [350000]"
           type="number"
           prefix="Rp. "
           hint="Jangan gunakan titik (.) atau koma (,)"
